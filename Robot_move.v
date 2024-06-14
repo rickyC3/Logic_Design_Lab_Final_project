@@ -67,7 +67,7 @@ always @(posedge clk_22 or negedge rst)
     end else if (~alive) begin // touch board
         r_x <= 10'd100; // back to begin
         r_y <= 10'd140;
-    end else if (r_nxt_x < 3 || r_nxt_x >= 640 || r_nxt_y < 3 || r_nxt_y >= 480) begin // touch board
+    end else if (r_nxt_x < 3 || r_nxt_x >= 637 || r_nxt_y < 3 || r_nxt_y >= 477) begin // touch board
         r_x <= r_x;
         r_y <= r_y;
     end else begin

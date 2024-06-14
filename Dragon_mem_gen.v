@@ -21,7 +21,7 @@
 
 
 module mem_gen(clk_25Hz, clk_22, rst, dragon_valid, h_cnt, v_cnt, d_x, d_y, r_x, r_y, m_x, m_y, 
-                        Pixel, Event, d_valid, r_valid);
+                        Pixel, Event, d_valid, r_valid, m_valid);
 input clk_25Hz, dragon_valid, clk_22, rst;
 input [9:0]h_cnt, v_cnt;
 input [9:0]d_x, d_y;
@@ -29,7 +29,7 @@ input [9:0]r_x, r_y;
 input [9:0]m_x, m_y;
 output reg [11:0]Pixel;
 output reg [1:0]Event;
-input d_valid, r_valid;
+input d_valid, r_valid, m_valid;
 // dragon_mem_gen
 wire [11:0]d_data;
 wire [11:0]d_pixel;
@@ -110,12 +110,12 @@ blk_mem_gen_1_robot robot_pixel0(
 always @* begin
     m_dx = h_cnt - m_x;
     m_dy = v_cnt - m_y;
-    m_range = ((m_x <= h_cnt) & ((h_cnt - m_x) < 90) & (v_cnt >= m_y) & ((v_cnt - m_y) < 30));
-    m_enable = (m_range)? 1:0;
+    m_range = ((m_x <= h_cnt) & ((h_cnt - m_x) < 56) & (v_cnt >= m_y) & ((v_cnt - m_y) < 12));
+    m_enable = (m_range & m_valid)? 1:0;
 end
 
 always @*
-    m_pixel_addr = (m_enable)? ((m_dy*90 + m_dx) % 2700) : 12'd0;
+    m_pixel_addr = (m_enable)? ((m_dy*56 + m_dx) % 2700) : 12'd0;
 
 blk_mem_gen_1_missile missile_pixel0(
   .clka(clk_25Hz),
@@ -132,8 +132,8 @@ always @*
         3'b001: begin d_die = 0; r_die = 0; Pixel = (d_valid == 1'b1)? d_pixel:12'hfff; end
         3'b010: begin d_die = 0; r_die = 0; Pixel = (r_valid == 1'b1)? r_pixel:12'hfff; end
         3'b011: begin d_die = 1; r_die = 1; Pixel = 12'hfff; end // both die
-        3'b100: begin d_die = 0; r_die = 0; Pixel = m_pixel; end
-        3'b101: begin d_die = 1; r_die = 0; Pixel = m_pixel; end
+        3'b100: begin d_die = 0; r_die = 0; Pixel = (m_valid == 1'b1)? m_pixel:12'hfff; end
+        3'b101: begin d_die = 1; r_die = 0; Pixel = (m_valid == 1'b1)? m_pixel:12'hfff; end
         3'b110: begin d_die = 0; r_die = 0; Pixel = (r_valid == 1'b1)? r_pixel:12'hfff; end
         3'b111: begin d_die = 1; r_die = 1; Pixel = 12'hfff; end
         default: begin d_die = 0; r_die = 0; Pixel = 12'hfff; end
