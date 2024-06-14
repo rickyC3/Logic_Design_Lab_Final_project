@@ -33,25 +33,37 @@ reg [9:0]tar_x = 10'd80;
 reg [9:0]tar_y = 10'd420;
 reg [9:0]dx, dy;
 
+wire [9:0]re_pos_x;
+wire [9:0]re_pos_y;
+wire [9:0]direction;
+
 // from right up to down left
 always @* begin
-    dx = 2;//(10'd560 - tar_x) >> 2; // move_cnt;
-    dy = 2;//(tar_y - 10'd60) >> 2;
+    
     
     show_valid = alive;
 end
+
+LFSR reborn_pos_x(.clk_22(clk_22), .rst(rst), .init(9'h43), .num(re_pos_x));
+LFSR reborn_pos_y(.clk_22(clk_22), .rst(rst), .init(9'hC9), .num(re_pos_y));
+
+LFSR dir(.clk_22(clk_22), .rst(rst), .init(9'hC9), .num(direction));
+
 
 always @(posedge clk_22 or negedge rst)
     if (~rst) begin
         d_x <= 10'd560; // init poition
         d_y <= 10'd60;
     end else if (~alive) begin // touch board
-        d_x <= 10'd560; // back to begin
-        d_y <= 10'd60;
-    end else begin
-        d_x <= d_x - 10'd2;//- dx;// notice to dec or increase sign
-        d_y <= d_y + 10'd2; //+ dy;
-    end
+        d_x <= (re_pos_x % 200) + 450; // back to begin
+        d_y <= (re_pos_y % 320) + 160;
+    end else if (direction[0]) begin
+        d_x <= d_x - 10'd5;//- dx;// notice to dec or increase sign
+        d_y <= d_y + 10'd5; //+ dy;
+    end else if (~direction[0]) begin
+        d_x <= d_x - 10'd5;
+        d_y <= d_y - 10'd5;
+    end 
 
 
 always @(posedge clk_22 or negedge rst)

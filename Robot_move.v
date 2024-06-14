@@ -42,20 +42,20 @@ end
 always @*
     case(move_opr) // up, down, left, right
         4'b0000: begin r_nxt_x = r_x; r_nxt_y = r_y; end
-        4'b0001: begin r_nxt_x = r_x + 10'd2; r_nxt_y = r_y; end
-        4'b0010: begin r_nxt_x = r_x - 10'd2; r_nxt_y = r_y; end
+        4'b0001: begin r_nxt_x = r_x + 10'd5; r_nxt_y = r_y; end
+        4'b0010: begin r_nxt_x = r_x - 10'd5; r_nxt_y = r_y; end
         4'b0011: begin r_nxt_x = r_x; r_nxt_y = r_y; end
-        4'b0100: begin r_nxt_x = r_x; r_nxt_y = r_y + 10'd2; end
-        4'b0101: begin r_nxt_x = r_x + 10'd2; r_nxt_y = r_y + 10'd2; end
-        4'b0110: begin r_nxt_x = r_x - 10'd2; r_nxt_y = r_y + 10'd2; end
-        4'b0111: begin r_nxt_x = r_x; r_nxt_y = r_y + 10'd2; end
-        4'b1000: begin r_nxt_x = r_x; r_nxt_y = r_y - 10'd2; end
-        4'b1001: begin r_nxt_x = r_x + 10'd2; r_nxt_y = r_y - 10'd2; end
-        4'b1010: begin r_nxt_x = r_x - 10'd2; r_nxt_y = r_y - 10'd2; end
-        4'b1011: begin r_nxt_x = r_x; r_nxt_y = r_y - 10'd2; end
+        4'b0100: begin r_nxt_x = r_x; r_nxt_y = r_y + 10'd5; end
+        4'b0101: begin r_nxt_x = r_x + 10'd5; r_nxt_y = r_y + 10'd5; end
+        4'b0110: begin r_nxt_x = r_x - 10'd5; r_nxt_y = r_y + 10'd5; end
+        4'b0111: begin r_nxt_x = r_x; r_nxt_y = r_y + 10'd5; end
+        4'b1000: begin r_nxt_x = r_x; r_nxt_y = r_y - 10'd5; end
+        4'b1001: begin r_nxt_x = r_x + 10'd5; r_nxt_y = r_y - 10'd5; end
+        4'b1010: begin r_nxt_x = r_x - 10'd5; r_nxt_y = r_y - 10'd5; end
+        4'b1011: begin r_nxt_x = r_x; r_nxt_y = r_y - 10'd5; end
         4'b1100: begin r_nxt_x = r_x; r_nxt_y = r_y; end
-        4'b1101: begin r_nxt_x = r_x + 10'd2; r_nxt_y = r_y; end
-        4'b1110: begin r_nxt_x = r_x - 10'd2; r_nxt_y = r_y; end
+        4'b1101: begin r_nxt_x = r_x + 10'd5; r_nxt_y = r_y; end
+        4'b1110: begin r_nxt_x = r_x - 10'd5; r_nxt_y = r_y; end
         4'b1111: begin r_nxt_x = r_x; r_nxt_y = r_y; end
         default: begin r_nxt_x = r_x; r_nxt_y = r_y; end
     endcase
@@ -67,7 +67,7 @@ always @(posedge clk_22 or negedge rst)
     end else if (~alive) begin // touch board
         r_x <= 10'd100; // back to begin
         r_y <= 10'd140;
-    end else if (r_nxt_x < 3 || r_nxt_x >= 640 || r_nxt_y < 3 || r_nxt_y >= 480) begin // touch board
+    end else if (r_nxt_x < 3 || r_nxt_x >= 637 || r_nxt_y < 3 || r_nxt_y >= 477) begin // touch board
         r_x <= r_x;
         r_y <= r_y;
     end else begin
