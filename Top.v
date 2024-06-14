@@ -20,10 +20,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module Top(clk, rst, h_sync, v_sync, vga_red, vga_green, vga_blue, move_sw, cd_led, pb_c, act_cd_state);
+module Top(clk, rst, ps2_data, ps2_clk, h_sync, v_sync, vga_red, vga_green, vga_blue, cd_led, act_cd_state);
 input clk, rst;
-input pb_c;
-input [3:0]move_sw;
+inout ps2_data, ps2_clk;
 output [1:0]act_cd_state; // for debug
 output [3:0]vga_red, vga_green, vga_blue;
 output cd_led;
@@ -41,6 +40,8 @@ wire dragon_valid;
 // robot
 wire [9:0]r_x, r_y;
 wire robot_valid;
+wire shoot_sign;
+wire [3:0]move_opr;
 
 // robot
 wire [9:0]m_x, m_y;
@@ -63,9 +64,9 @@ Dragon_move Dragon_Move_U0(.clk_1Hz(clk_1Hz), .clk_22(clk_22),
      .rst(rst), .d_x(d_x), .d_y(d_y), .show_valid(dragon_valid), .Event(Event));
 
 Robot_move Robot_move_U0(.clk_1Hz(clk_1Hz), .clk_22(clk_22), .rst(rst), 
-.r_x(r_x), .r_y(r_y), .move_opr(move_sw), .show_valid(robot_valid), .Event(Event));
+.r_x(r_x), .r_y(r_y), .move_opr(move_opr), .show_valid(robot_valid), .Event(Event));
 
-Missile_move Missile_move_U0(.clk_1Hz(clk_1Hz), .clk_22(clk_22), .rst(rst), .shoot_sign(pb_c),
+Missile_move Missile_move_U0(.clk_1Hz(clk_1Hz), .clk_22(clk_22), .rst(rst), .shoot_sign(shoot_sign),
 .r_x(r_x), .r_y(r_y), .m_x(m_x), .m_y(m_y), .show_valid(missile_valid), .cd_sign(cd_led), .act_cd_state(act_cd_state));
 
 vga_controller  vga_inst(
@@ -82,6 +83,9 @@ mem_gen Dragon_mem_gen(.clk_25Hz(clk_25MHz), .clk_22(clk_22), .rst(rst), .dragon
 .h_cnt(h_cnt), .v_cnt(v_cnt), .d_x(d_x), .d_y(d_y), .r_x(r_x), .r_y(r_y),
 .m_x(m_x), .m_y(m_y), .Pixel(Pixel), .Event(Event), 
 .d_valid(dragon_valid), .r_valid(robot_valid), .m_valid(missile_valid));
+
+KeyBoard_Sign(.ps2_data(ps2_data), .ps2_clk(ps2_clk), .rst_p(rst), 
+.clk_100Hz(clk), .move_opr(move_opr), .shoot_sign(shoot_sign));
 
 always @(posedge clk_22 or negedge rst)
     if (~rst)
