@@ -48,7 +48,7 @@ always @(posedge clk_22 or negedge rst)
         m_x <= r_x; // move with robot
         m_y <= r_y;
     end else if (act_cd_state == 2'b01)begin
-        m_x <= m_x + 10'd10;
+        m_x <= m_x + 10'd50;
         m_y <= m_y;
     end
 
@@ -58,7 +58,7 @@ always @(posedge clk_22 or negedge rst)
         act_cd_state <= 2'b00;
     end else if (act_cd_state == 2'b11) begin
         act_cd_state <= 2'b00;
-    end else if (act_cd_state == 2'b10 && cd_cnt == 50) begin
+    end else if (act_cd_state == 2'b10 && cd_cnt == 10) begin
         act_cd_state <= 2'b00;
         cd_cnt <= 0;
     end else if (act_cd_state == 2'b10) begin 

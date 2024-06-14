@@ -35,6 +35,12 @@ integer score;
 // dragon move
 wire [9:0]d_x, d_y;
 wire dragon_valid;
+// dragon1 move
+wire [9:0]d1_x, d1_y;
+wire dragon1_valid;
+// dragon2 move
+wire [9:0]d2_x, d2_y;
+wire dragon2_valid;
 
 
 // robot
@@ -53,15 +59,21 @@ wire [9:0]h_cnt, v_cnt;
 output h_sync, v_sync;
 
 wire [11:0]Pixel;
-wire [1:0]Event;
+wire [3:0]Event;
 assign {vga_red, vga_green, vga_blue} = (vga_valid)? Pixel:12'h0;
     
 
 _1HzClk _1HzClk_U0(.clk(clk), .rst(rst), .clk_out(clk_1Hz));
 Clk_22 Clk_22_U0(.clk(clk), .rst(rst), .clk_out_22(clk_22), .clk_out_25(clk_25MHz));
 
-Dragon_move Dragon_Move_U0(.clk_1Hz(clk_1Hz), .clk_22(clk_22), 
-     .rst(rst), .d_x(d_x), .d_y(d_y), .show_valid(dragon_valid), .Event(Event));
+Dragon_move Dragon_Move_U0( .clk_22(clk_22), .init(10'hAB),
+     .rst(rst), .d_x(d_x), .d_y(d_y), .show_valid(dragon_valid), .life_state(Event[3]));
+
+Dragon_move Dragon_Move_U1( .clk_22(clk_22), .init(10'h27),
+     .rst(rst), .d_x(d1_x), .d_y(d1_y), .show_valid(dragon1_valid), .life_state(Event[2]));
+
+Dragon_move Dragon_Move_U2( .clk_22(clk_22), .init(10'h43),
+     .rst(rst), .d_x(d2_x), .d_y(d2_y), .show_valid(dragon2_valid), .life_state(Event[1]));
 
 Robot_move Robot_move_U0(.clk_1Hz(clk_1Hz), .clk_22(clk_22), .rst(rst), 
 .r_x(r_x), .r_y(r_y), .move_opr(move_opr), .show_valid(robot_valid), .Event(Event));
@@ -79,10 +91,11 @@ vga_controller  vga_inst(
   .v_cnt(v_cnt)
 );
 
-mem_gen Dragon_mem_gen(.clk_25Hz(clk_25MHz), .clk_22(clk_22), .rst(rst), .dragon_valid(dragon_valid), 
-.h_cnt(h_cnt), .v_cnt(v_cnt), .d_x(d_x), .d_y(d_y), .r_x(r_x), .r_y(r_y),
+mem_gen Dragon_mem_gen(.clk_25Hz(clk_25MHz), .clk_22(clk_22), .rst(rst), 
+.h_cnt(h_cnt), .v_cnt(v_cnt), .d_x(d_x), .d_y(d_y), .r_x(r_x), .r_y(r_y), .d1_x(d1_x), .d1_y(d1_y), .d2_x(d2_x), .d2_y(d2_y),
 .m_x(m_x), .m_y(m_y), .Pixel(Pixel), .Event(Event), 
-.d_valid(dragon_valid), .r_valid(robot_valid), .m_valid(missile_valid));
+.d_valid(dragon_valid), .r_valid(robot_valid), .m_valid(missile_valid), 
+.d1_valid(dragon1_valid), .d2_valid(dragon2_valid));
 
 KeyBoard_Sign(.ps2_data(ps2_data), .ps2_clk(ps2_clk), .rst_p(rst), 
 .clk_100Hz(clk), .move_opr(move_opr), .shoot_sign(shoot_sign));
@@ -90,8 +103,13 @@ KeyBoard_Sign(.ps2_data(ps2_data), .ps2_clk(ps2_clk), .rst_p(rst),
 always @(posedge clk_22 or negedge rst)
     if (~rst)
         score <= 0;
-    else if (Event[1])
-        score <= score + 1;
+    else if (Event[1] || Event[2] || Event[3])
+        case(Event[3:1])
+            3'b001, 3'b010, 3'b100: score <= score + 1;
+            3'b011, 3'b110, 3'b101: score <= score + 2;
+            3'b111: score <= score + 3;
+            default: score <= score;
+        endcase
     else
         score <= score;
 
