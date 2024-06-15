@@ -22,8 +22,10 @@
 
 module Top(clk, rst, pause, pb_c, ps2_data, ps2_clk, h_sync, v_sync, 
                     vga_red, vga_green, vga_blue, cd_led, act_cd_state,
-                           ssd_out, D, now_state, stop_state);
+                           ssd_out, D, now_state, stop_state,
+                               MCLK, SCK, LRCK, Stdin);
 input clk, rst, pause, pb_c;
+output MCLK, LRCK, SCK, Stdin;
 inout ps2_data, ps2_clk;
 output [1:0]act_cd_state; // for debug
 output [3:0]vga_red, vga_green, vga_blue;
@@ -105,6 +107,10 @@ mem_gen Dragon_mem_gen(.clk_25Hz(clk_25MHz), .clk_22(clk_22), .rst(rst),
 
 KeyBoard_Sign(.ps2_data(ps2_data), .ps2_clk(ps2_clk), .rst_p(rst), 
 .clk_100Hz(clk), .move_opr(move_opr), .shoot_sign(shoot_sign));
+
+Speaker(.clk(clk), .rst(rst), .Event(Event), .shoot_sign(shoot_sign), 
+         .MCLK(MCLK), .SCK(SCK), .LRCK(LRCK), .Stdin(Stdin));
+
 
 INT2BCD score_BCD(.int(score), .bcd(bcd_score));
 INT2BCD hscore_BCD(.int(h_score), .bcd(bcd_hscore));
