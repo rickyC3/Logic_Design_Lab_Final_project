@@ -20,8 +20,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module Dragon_move(clk_22, rst, d_x, d_y, show_valid, life_state, init);
-input clk_22, rst;
+module Dragon_move(clk_22, rst, pause, d_x, d_y, show_valid, life_state, init);
+input clk_22, rst, pause;
 input [9:0]init;
 input life_state; // d, r die
 output reg [9:0]d_x, d_y; // now poition, with left up
@@ -54,6 +54,9 @@ always @(posedge clk_22 or negedge rst)
     if (~rst) begin
         d_x <= (init % 200) + 450; // init poition
         d_y <= (init % 320) + 160;
+    end else if (pause) begin
+        d_x <= d_x;
+        d_y <= d_y;
     end else if (~alive) begin // touch board
         d_x <= (re_pos_x % 200) + 450; // back to begin
         d_y <= (re_pos_y % 320) + 160;

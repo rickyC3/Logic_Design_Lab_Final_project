@@ -20,8 +20,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module Missile_move(clk_1Hz, clk_22, rst, r_x, r_y, m_x, m_y, show_valid, cd_sign, shoot_sign, act_cd_state);
-input clk_22, clk_1Hz, rst, shoot_sign;
+module Missile_move(clk_22, pause, rst, r_x, r_y, m_x, m_y, show_valid, cd_sign, shoot_sign, act_cd_state);
+input clk_22, rst, shoot_sign, pause;
 input [9:0]r_x, r_y;
 //input [1:0]Event; // d, r die
 output reg [9:0]m_x, m_y; // now poition, with left up
@@ -44,6 +44,9 @@ always @(posedge clk_22 or negedge rst)
     if (~rst) begin
         m_x <= 10'd100; // init poition
         m_y <= 10'd140;
+    end else if (pause) begin
+        m_x <= m_x;
+        m_y <= m_y;
     end else if (act_cd_state != 2'b01) begin // touch board
         m_x <= r_x; // move with robot
         m_y <= r_y;

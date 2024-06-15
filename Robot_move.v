@@ -20,8 +20,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module Robot_move(clk_1Hz, clk_22, rst, r_x, r_y, move_opr, show_valid, Event);
-input clk_22, clk_1Hz, rst;
+module Robot_move(clk_22, pause, rst, r_x, r_y, move_opr, show_valid, Event);
+input clk_22, rst, pause;
 input [3:0]move_opr;
 input [1:0]Event; // d, r die
 output reg [9:0]r_x, r_y; // now poition, with left up
@@ -64,6 +64,9 @@ always @(posedge clk_22 or negedge rst)
     if (~rst) begin
         r_x <= 10'd100; // init poition
         r_y <= 10'd140;
+    end else if (pause) begin
+        r_x <= r_x;
+        r_y <= r_y;
     end else if (~alive) begin // touch board
         r_x <= 10'd100; // back to begin
         r_y <= 10'd140;

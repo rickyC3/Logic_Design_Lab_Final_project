@@ -20,18 +20,24 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module Top(clk, rst, ps2_data, ps2_clk, h_sync, v_sync, vga_red, vga_green, vga_blue, cd_led, act_cd_state);
-input clk, rst;
+module Top(clk, rst, pause, pb_c, ps2_data, ps2_clk, h_sync, v_sync, 
+                    vga_red, vga_green, vga_blue, cd_led, act_cd_state,
+                           ssd_out, D, now_state, stop_state);
+input clk, rst, pause, pb_c;
 inout ps2_data, ps2_clk;
 output [1:0]act_cd_state; // for debug
 output [3:0]vga_red, vga_green, vga_blue;
 output cd_led;
+output [3:0]ssd_out;
+output [7:0]D;
+output [1:0]now_state;
+output stop_state;
 wire clk_1Hz; // 1 sec
 wire clk_22, clk_25MHz; // 100 / 2^22 Hz
 
 // score
-integer score;
-
+reg [13:0]h_score, score, rounds;
+wire [15:0]bcd_hscore, bcd_score, bcd_rounds;
 // dragon move
 wire [9:0]d_x, d_y;
 wire dragon_valid;
@@ -66,19 +72,19 @@ assign {vga_red, vga_green, vga_blue} = (vga_valid)? Pixel:12'h0;
 _1HzClk _1HzClk_U0(.clk(clk), .rst(rst), .clk_out(clk_1Hz));
 Clk_22 Clk_22_U0(.clk(clk), .rst(rst), .clk_out_22(clk_22), .clk_out_25(clk_25MHz));
 
-Dragon_move Dragon_Move_U0( .clk_22(clk_22), .init(10'hAB),
+Dragon_move Dragon_Move_U0( .clk_22(clk_22), .init(10'hAB), .pause(pause),
      .rst(rst), .d_x(d_x), .d_y(d_y), .show_valid(dragon_valid), .life_state(Event[3]));
 
-Dragon_move Dragon_Move_U1( .clk_22(clk_22), .init(10'h27),
+Dragon_move Dragon_Move_U1( .clk_22(clk_22), .init(10'h27), .pause(pause),
      .rst(rst), .d_x(d1_x), .d_y(d1_y), .show_valid(dragon1_valid), .life_state(Event[2]));
 
-Dragon_move Dragon_Move_U2( .clk_22(clk_22), .init(10'h43),
+Dragon_move Dragon_Move_U2( .clk_22(clk_22), .init(10'h43), .pause(pause),
      .rst(rst), .d_x(d2_x), .d_y(d2_y), .show_valid(dragon2_valid), .life_state(Event[1]));
 
-Robot_move Robot_move_U0(.clk_1Hz(clk_1Hz), .clk_22(clk_22), .rst(rst), 
+Robot_move Robot_move_U0(.pause(pause), .clk_22(clk_22), .rst(rst), 
 .r_x(r_x), .r_y(r_y), .move_opr(move_opr), .show_valid(robot_valid), .Event(Event));
 
-Missile_move Missile_move_U0(.clk_1Hz(clk_1Hz), .clk_22(clk_22), .rst(rst), .shoot_sign(shoot_sign),
+Missile_move Missile_move_U0(.pause(pause), .clk_22(clk_22), .rst(rst), .shoot_sign(shoot_sign),
 .r_x(r_x), .r_y(r_y), .m_x(m_x), .m_y(m_y), .show_valid(missile_valid), .cd_sign(cd_led), .act_cd_state(act_cd_state));
 
 vga_controller  vga_inst(
@@ -100,19 +106,54 @@ mem_gen Dragon_mem_gen(.clk_25Hz(clk_25MHz), .clk_22(clk_22), .rst(rst),
 KeyBoard_Sign(.ps2_data(ps2_data), .ps2_clk(ps2_clk), .rst_p(rst), 
 .clk_100Hz(clk), .move_opr(move_opr), .shoot_sign(shoot_sign));
 
+INT2BCD score_BCD(.int(score), .bcd(bcd_score));
+INT2BCD hscore_BCD(.int(h_score), .bcd(bcd_hscore));
+INT2BCD rounds_BCD(.int(rounds), .bcd(bcd_rounds));
+
+ssd_top(
+.clk(clk),
+.rst(rst),
+.pause(pause),         //dip switch signal for pause/resume
+.pb_center(pb_c),       //pb signal for sssd display changing
+.pts(bcd_score),      //points you get now
+.hpts(bcd_hscore),     //highest points you got
+.rounds(bcd_rounds),   //the round you are playing 
+.ssd_out(ssd_out),
+.D(D),
+.now_state(now_state),
+.stop_state(stop_state)
+    );
+
 always @(posedge clk_22 or negedge rst)
     if (~rst)
         score <= 0;
-    else if (Event[1] || Event[2] || Event[3])
+    else if (Event[1] || Event[2] || Event[3]) begin
+        if (Event[0])
+            if (score > h_score) begin
+                h_score <= score; score <= 0;
+            end else begin
+                h_score <= h_score; score <= 0;end 
+                
         case(Event[3:1])
             3'b001, 3'b010, 3'b100: score <= score + 1;
             3'b011, 3'b110, 3'b101: score <= score + 2;
             3'b111: score <= score + 3;
             default: score <= score;
         endcase
-    else
+        
+    end else
         score <= score;
 
+always @(posedge clk_22 or negedge rst)
+    if (~rst)
+        rounds <= 0;
+    else if (Event[0])
+        rounds <= rounds + 1;
+    else
+        rounds <= rounds;
+        
 
+
+    
 
 endmodule
