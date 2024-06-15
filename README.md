@@ -1,5 +1,6 @@
 # Logic_Design_Lab_Final_project
-NTHU verilog lab class -- final project \n
+### NTHU verilog lab class -- final project
 
-robot, dragon size: 40*30 (width*height) \n
+<p> robot, dragon size: 40*30 (width*height) </p>
+
 missile image size: (56*12)
