@@ -24,7 +24,7 @@ module mem_gen(clk_25Hz, clk_22, rst, h_cnt, v_cnt,
 d_x, d_y, d1_x, d1_y, d2_x, d2_y,
 r_x, r_y, m_x, m_y, Pixel, Event, d_valid, r_valid, m_valid, d1_valid, d2_valid);
 input clk_25Hz, clk_22, rst; // 25MHz, 100/2^22 Hz, 
-input [9:0]h_cnt, v_cnt; // the position vga print
+input [9:0]h_cnt, v_cnt; // the position vga print right now
 input [9:0]d_x, d_y;   // dragon0's position
 input [9:0]d1_x, d1_y; // dragon1's position
 input [9:0]d2_x, d2_y; // dragon2's position
@@ -193,7 +193,7 @@ end
 
 always @*
     // 2D to 1D, generate missile's addr (size: 56*12)
-    m_pixel_addr = (m_enable)? ((m_dy*56 + m_dx) % 2700) : 12'd0;
+    m_pixel_addr = (m_enable)? ((m_dy*56 + m_dx) % 672) : 12'd0;
 
 blk_mem_gen_1_missile missile_pixel0(
   .clka(clk_25Hz),
@@ -288,9 +288,11 @@ always @(posedge clk_25Hz or negedge rst)
     end else if ({d_die, d1_die, d2_die, r_die} != 4'd0 && Event != {d_die, d1_die, d2_die, r_die}) begin
         Event <= {d_die, d1_die, d2_die, r_die};
         cnt <= 0;
-    end else if (cnt[19] != 1)
+    // podcast valid time
+    end else if (cnt[19] != 1) // add some time, longer valid time
         cnt <= cnt + 1;
     else
+    // podcast end
         Event <= 4'd0;
             
 

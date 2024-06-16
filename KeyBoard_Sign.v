@@ -54,22 +54,22 @@ KeyboardDecoder( .key_down(key_down), .last_change(last_change),
 
 always @* begin
     w_decoder = (1 << 8'h1D);
-    w_key_state = |(key_down & (1 << 8'h1D));
+    w_key_state = |(key_down & (1 << 8'h1D));// check w in key_down 
     
     a_decoder = (1 << 8'h1C);
-    a_key_state = |(key_down & (1 << 8'h1C));
+    a_key_state = |(key_down & (1 << 8'h1C));// check a in key_down
     
     s_decoder = (1 << 8'h1B);
-    s_key_state = |(key_down & (1 << 8'h1B));
+    s_key_state = |(key_down & (1 << 8'h1B));// check s in key_down
     
     d_decoder = (1 << 8'h23);
-    d_key_state = |(key_down & (1 << 8'h23));
+    d_key_state = |(key_down & (1 << 8'h23));// check d in key_down
     
     sp_decoder = (1 << 8'h29);
-    space_state = |(key_down & (1 << 8'h29));
+    space_state = |(key_down & (1 << 8'h29));// check space in key_down
 
-    shoot_sign = space_state;
-    move_opr = {w_key_state, s_key_state, a_key_state, d_key_state};
+    shoot_sign = space_state; // move opration
+    move_opr = {w_key_state, s_key_state, a_key_state, d_key_state}; // space(fire) signal
 end
 
 endmodule

@@ -41,16 +41,15 @@ output MCLK, LRCK, SCK, Stdin;
 input [3:0]Event;
 input shoot_sign;
 
-reg init_rst;
 reg [26:0]div_note_left, div_note_right;
 reg [91:0]play_div;
 reg [3:0]div_num, div_num2; 
-reg [26:0]now_div; // background music
-reg [26:0]now_div2;
+reg [26:0]now_div; // background music(left)
+reg [26:0]now_div2; // right
 wire [15:0]right_audio;
 wire [15:0]left_audio;
 
-wire clk_Hz;
+wire clk_Hz;// 1Hz Clk
 
 _1HzClk OneHzClk(.clk(clk), .rst(rst), .clk_out(clk_Hz));
     
@@ -63,7 +62,7 @@ Speaker_CTL Speaker_CTL0(.clk(clk), .rst(rst), .left_audio(left_audio), .Stdin(S
             .right_audio(right_audio), .MCLK(MCLK), .LRCK(LRCK), .SCK(SCK));
 
 
-
+// left div decoder
 always @*
       case(div_num)
             4'h0: now_div = `Div_Do;
@@ -84,7 +83,7 @@ always @*
             4'hF: now_div = `Div_H_Re;
 			default: now_div = 27'd1;
 	endcase
-
+// right div decoder
 always @*
       case(div_num2)
             4'h0: now_div2 = `Div_Do;
@@ -109,14 +108,14 @@ always @*
 // background music
 reg [91:0]b_music = 92'h223455442001102211000;
 
-
+// each div play 1 sec
 always @(posedge clk_Hz or negedge rst)
 	if (~rst)
 		play_div <= b_music;
 	else
 		play_div <= {play_div[87:0], play_div[91:88]};
 
-always @* begin
+always @* begin // play 2 diff tone
 	div_num = play_div[91:88];
     div_num2 = play_div[3:0];
 end
@@ -124,11 +123,12 @@ end
 always @* begin
 	div_note_left = now_div;
 	
-	if (Event[0])
+	// some sound effect
+	if (Event[0]) // if robot die
 		div_note_right = `Div_m_Do;
-	else if (shoot_sign)
+	else if (shoot_sign) // fire!!!
 		div_note_right = `Div_Re;
-	else 
+	else  // else play background music
 		div_note_right = now_div2;end	
 
 endmodule
