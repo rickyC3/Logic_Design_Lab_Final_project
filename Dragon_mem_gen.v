@@ -386,7 +386,7 @@ always @(posedge clk_22 or negedge rst)
          otk_cnt <= 0;
          otk_sign <= 0;
          cd_cnt <= 0;
-    end else if (otk_sign && cd_cnt == 200) begin
+    end else if (otk_sign && cd_cnt == 200) begin // cd time
         otk_sign <= 0;
         cd_cnt <= 0;
         otk_cnt <= 0;
