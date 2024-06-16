@@ -57,7 +57,7 @@ wire robot_valid;
 wire shoot_sign;
 wire [3:0]move_opr;
 
-// robot
+// missile
 wire [9:0]m_x, m_y;
 wire missile_valid;
 
@@ -111,7 +111,7 @@ KeyBoard_Sign(.ps2_data(ps2_data), .ps2_clk(ps2_clk), .rst_p(rst),
 Speaker(.clk(clk), .rst(rst), .Event(Event), .shoot_sign(shoot_sign), 
          .MCLK(MCLK), .SCK(SCK), .LRCK(LRCK), .Stdin(Stdin));
 
-
+// turn binary code to BCD code
 INT2BCD score_BCD(.int(score), .bcd(bcd_score));
 INT2BCD hscore_BCD(.int(h_score), .bcd(bcd_hscore));
 INT2BCD rounds_BCD(.int(rounds), .bcd(bcd_rounds));
@@ -129,28 +129,29 @@ ssd_top(
 .now_state(now_state),
 .stop_state(stop_state)
     );
+    
+
 
 always @(posedge clk_22 or negedge rst)
-    if (~rst)
+    if (~rst) begin
         score <= 0;
-    else if (Event[1] || Event[2] || Event[3]) begin
-        if (Event[0])
-            if (score > h_score) begin
-                h_score <= score; score <= 0;
-            end else begin
-                h_score <= h_score; score <= 0;end 
+        h_score <= 0;end
+    else if (Event[0]) 
+        score <= 0;
+    else if (Event[1] || Event[2] || Event[3]) begin // if any dragon die 
                 
-        case(Event[3:1])
-            3'b001, 3'b010, 3'b100: score <= score + 1;
-            3'b011, 3'b110, 3'b101: score <= score + 2;
-            3'b111: score <= score + 3;
+        case(Event[3:1]) // add the points by each condition
+            3'b001, 3'b010, 3'b100: begin score <= score + 1; h_score <= (score + 1 > h_score)? score + 1:h_score; end
+            3'b011, 3'b110, 3'b101: begin score <= score + 2; h_score <= (score + 2 > h_score)? score + 2:h_score; end
+            3'b111: begin score <= score + 3; h_score <= (score + 3 > h_score)? score + 3:h_score; end
             default: score <= score;
         endcase
+        
         
     end else
         score <= score;
 
-always @(posedge clk_22 or negedge rst)
+always @(posedge clk_22 or negedge rst) // if robot die --> new rounds
     if (~rst)
         rounds <= 0;
     else if (Event[0])
