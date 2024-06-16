@@ -20,16 +20,17 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module Top(clk, rst, pause, pb_c, ps2_data, ps2_clk, h_sync, v_sync, 
+module Top(clk, rst, pause, sw_t1, pb_c, ps2_data, ps2_clk, h_sync, v_sync, 
                     vga_red, vga_green, vga_blue, cd_led, act_cd_state,
-                           ssd_out, D, now_state, stop_state,
+                           ssd_out, D, now_state, stop_state, otk_led,
                                MCLK, SCK, LRCK, Stdin);
-input clk, rst, pause, pb_c;
+input clk, rst, pause, pb_c, sw_t1;
 output MCLK, LRCK, SCK, Stdin;
 inout ps2_data, ps2_clk;
 output [1:0]act_cd_state; // for debug
 output [3:0]vga_red, vga_green, vga_blue;
 output cd_led;
+output reg otk_led;
 output [3:0]ssd_out;
 output [7:0]D;
 output [1:0]now_state;
@@ -68,6 +69,9 @@ output h_sync, v_sync;
 
 wire [11:0]Pixel;
 wire [3:0]Event;
+
+wire otk_sign;
+
 assign {vga_red, vga_green, vga_blue} = (vga_valid)? Pixel:12'h0;
     
 
@@ -99,11 +103,11 @@ vga_controller  vga_inst(
   .v_cnt(v_cnt)
 );
 
-mem_gen Dragon_mem_gen(.clk_25Hz(clk_25MHz), .clk_22(clk_22), .rst(rst), 
+mem_gen Dragon_mem_gen(.clk_25Hz(clk_25MHz), .clk_22(clk_22), .sw_in_t1(sw_t1), .rst(rst), 
 .h_cnt(h_cnt), .v_cnt(v_cnt), .d_x(d_x), .d_y(d_y), .r_x(r_x), .r_y(r_y), .d1_x(d1_x), .d1_y(d1_y), .d2_x(d2_x), .d2_y(d2_y),
-.m_x(m_x), .m_y(m_y), .Pixel(Pixel), .Event(Event), 
+.m_x(m_x), .m_y(m_y), .pixel(Pixel), .Event(Event), 
 .d_valid(dragon_valid), .r_valid(robot_valid), .m_valid(missile_valid), 
-.d1_valid(dragon1_valid), .d2_valid(dragon2_valid));
+.d1_valid(dragon1_valid), .d2_valid(dragon2_valid), .otk_sign(otk_sign));
 
 KeyBoard_Sign(.ps2_data(ps2_data), .ps2_clk(ps2_clk), .rst_p(rst), 
 .clk_100Hz(clk), .move_opr(move_opr), .shoot_sign(shoot_sign));
@@ -159,7 +163,15 @@ always @(posedge clk_22 or negedge rst) // if robot die --> new rounds
     else
         rounds <= rounds;
         
-
+always @(posedge clk_1Hz or negedge rst)
+    if (~rst)
+        otk_led <= 0;
+    else if (otk_sign)
+        otk_led <= ~otk_led;
+    else if (~otk_sign)
+        otk_led <= 0;
+    else
+        otk_led <= otk_led;
 
     
 
