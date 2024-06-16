@@ -20,19 +20,23 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module mem_gen(clk_25Hz, clk_22, rst, h_cnt, v_cnt, 
+module mem_gen(clk_25Hz, clk_22,  sw_in_t1, rst, h_cnt, v_cnt, 
 d_x, d_y, d1_x, d1_y, d2_x, d2_y,
-r_x, r_y, m_x, m_y, Pixel, Event, d_valid, r_valid, m_valid, d1_valid, d2_valid);
+r_x, r_y, m_x, m_y, pixel, Event, d_valid, r_valid, m_valid, d1_valid, d2_valid, otk_sign);
 input clk_25Hz, clk_22, rst; // 25MHz, 100/2^22 Hz, 
+input sw_in_t1;
 input [9:0]h_cnt, v_cnt; // the position vga print right now
 input [9:0]d_x, d_y;   // dragon0's position
 input [9:0]d1_x, d1_y; // dragon1's position
 input [9:0]d2_x, d2_y; // dragon2's position
 input [9:0]r_x, r_y;   // robot's position
 input [9:0]m_x, m_y;   // missile's position
-output reg [11:0]Pixel; // eventually output
+output reg [11:0]pixel; // eventually output
 output reg [3:0]Event;  // gobal podcast: character die sign
+output otk_sign;
 input d_valid, r_valid, m_valid, d1_valid, d2_valid; // character life state (missile active or cd state)
+
+reg [11:0]Pixel;
 
 // dragon_mem_gen
 wire [11:0]d_data;
@@ -86,6 +90,25 @@ reg [9:0]m_dx, m_dy;
 // check in the range
 reg m_range;
 reg m_enable;
+
+// background
+wire [11:0]b0_data;
+wire [11:0]b0_pixel;
+wire [11:0]b1_data;
+wire [11:0]b1_pixel;
+reg [14:0]b_pixel_addr;
+reg [11:0]b_pixel;
+
+// otk cnt
+integer otk_cnt;
+integer cd_cnt;
+reg otk_sign;
+
+// new* -------------------- for otk, you has 3 missile
+reg [9:0]m_otk_dx, m_otk_dy;
+reg [9:0]m_otk_dx1, m_otk_dy1;
+reg m_otk_range1, m_otk_enable1;
+reg m_otk_range, m_otk_enable;
 
 
 // -------------------------------
@@ -188,12 +211,44 @@ always @* begin
     // check h,v cnt is in missile's image range?
     m_range = ((m_x <= h_cnt) & ((h_cnt - m_x) < 56) & (v_cnt >= m_y) & ((v_cnt - m_y) < 12));
     // judge going to show missile's pixel or not
-    m_enable = (m_range & m_valid)? 1:0;
+    m_enable = ((m_range & m_valid) || (m_otk_enable) || (m_otk_enable1))? 1:0;
 end
 
-always @*
+// -------------------------
+
+always @* 
     // 2D to 1D, generate missile's addr (size: 56*12)
-    m_pixel_addr = (m_enable)? ((m_dy*56 + m_dx) % 672) : 12'd0;
+    if (m_enable)
+        m_pixel_addr = ((m_dy*56 + m_dx) % 672);
+    else if (m_otk_enable)
+        m_pixel_addr = ((m_otk_dy*56 + m_dx) % 672);
+    else if (m_otk_enable1)
+        m_pixel_addr = ((m_otk_dy1*56 + m_dx) % 672);
+    else
+        m_pixel_addr = 12'd0;
+
+
+
+
+always @* begin
+    // distance between point and missile
+    m_otk_dx = h_cnt - m_x;
+    m_otk_dy = v_cnt - (m_y + 20);
+    // check h,v cnt is in missile's image range?
+    m_otk_range = ((m_x <= h_cnt) & ((h_cnt - m_x) < 56) & (v_cnt >= (m_y + 20)) & ((v_cnt - (m_y + 20)) < 12));
+    // judge going to show missile's pixel or not
+    m_otk_enable = (m_otk_range & m_valid & otk_sign)? 1:0;
+end
+
+always @* begin
+    // distance between point and missile
+    m_otk_dx1 = h_cnt - m_x;
+    m_otk_dy1 = v_cnt - (m_y - 20);
+    // check h,v cnt is in missile's image range?
+    m_otk_range1 = ((m_x <= h_cnt) & ((h_cnt - m_x) < 56) & (v_cnt >= (m_y - 20)) & ((v_cnt - (m_y - 20)) < 12));
+    // judge going to show missile's pixel or not
+    m_otk_enable1 = (m_otk_range1 & m_valid & m_y >= 20 & otk_sign)? 1:0;
+end
 
 blk_mem_gen_1_missile missile_pixel0(
   .clka(clk_25Hz),
@@ -202,6 +257,29 @@ blk_mem_gen_1_missile missile_pixel0(
   .dina(m_data[11:0]),
   .douta(m_pixel)
 );
+
+// background
+always @* begin
+    b_pixel_addr = ((v_cnt >> 2)*160 + (h_cnt >> 2))%19200;
+    b_pixel = (sw_in_t1)? b0_pixel:b1_pixel; 
+end
+
+blk_mem_gen_1_back0 back0_pixel0(
+      .clka(clk_25Hz),
+      .wea(0),
+      .addra(b_pixel_addr),
+      .dina(b0_data[11:0]),
+      .douta(b0_pixel)
+    );
+
+    
+blk_mem_gen_1 back1_pixel0(
+      .clka(clk_25Hz),
+      .wea(0),
+      .addra(b_pixel_addr),
+      .dina(b1_data[11:0]),
+      .douta(b1_pixel)
+    );
 
 // fsm -------
 // if a point belong to several char, descide which pixel should print
@@ -277,7 +355,10 @@ always @*
             d_die = 1; d1_die = 1; d2_die = 1; r_die = 1; Pixel = (m_valid == 1'b1)? m_pixel:12'hfff; end
         default:  begin d_die = 0; d1_die = 0; d2_die = 0; r_die = 0; Pixel = 12'hfff; end
     endcase
-        
+
+always @*
+    pixel = (Pixel == 12'hfff)? b_pixel:Pixel;
+    
 reg [19:0]cnt;
 // covert the 25MHz to 100M/2^22 signal
 always @(posedge clk_25Hz or negedge rst)
@@ -294,6 +375,45 @@ always @(posedge clk_25Hz or negedge rst)
     else
     // podcast end
         Event <= 4'd0;
-            
+
+// otk triggle
+always @(posedge clk_22 or negedge rst)
+    if (~rst) begin
+        otk_cnt <= 0;
+        otk_sign <= 0;
+        cd_cnt <= 0;
+    end else if (Event[0]) begin
+         otk_cnt <= 0;
+         otk_sign <= 0;
+         cd_cnt <= 0;
+    end else if (otk_sign && cd_cnt == 200) begin
+        otk_sign <= 0;
+        cd_cnt <= 0;
+        otk_cnt <= 0;
+    end else if (otk_sign) begin
+        cd_cnt <= cd_cnt + 1;
+        otk_cnt <= 0;
+    end else if (~otk_sign && otk_cnt == 10) begin
+        cd_cnt <= 0;
+        otk_cnt <= 0;
+        otk_sign <= 1;
+    end else if (~otk_sign) begin
+        case(Event[3:1]) // add the points by each condition
+            3'b001, 3'b010, 3'b100: begin otk_cnt <= otk_cnt + 1;end
+            3'b011, 3'b110, 3'b101: begin otk_cnt <= otk_cnt + 2;end
+            3'b111: begin otk_cnt <= otk_cnt + 3;end
+            default: otk_cnt <= otk_cnt;
+        endcase
+    end else begin
+        cd_cnt <= cd_cnt;
+        otk_sign <= otk_sign;
+        otk_cnt <= otk_cnt;
+    end
+        
+    
+
+        
+   
+        
 
 endmodule

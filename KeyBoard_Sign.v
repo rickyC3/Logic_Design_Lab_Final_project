@@ -47,7 +47,7 @@ always @* begin
 end
 
 
-KeyboardDecoder( .key_down(key_down), .last_change(last_change), 
+    KeyboardDecoder( .key_down(key_down), .last_change(last_change), 
                  .key_valid(key_valid), .PS2_DATA(ps2_data), .PS2_CLK(ps2_clk), 
                  .rst(~rst_p), .clk(clk_100Hz));
 
