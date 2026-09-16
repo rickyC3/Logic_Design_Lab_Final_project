@@ -6,8 +6,10 @@ A Verilog-based FPGA game implemented as the final project for the **Logic Desig
 
 The project implements a simple 2D shooting game on an FPGA board. The player controls a robot using a PS/2 keyboard and shoots missiles at randomly moving dragons. The game integrates VGA graphics, keyboard input, collision detection, finite-state machines, timers, score tracking, seven-segment display, and audio output.\
 
----
+demo video: https://drive.google.com/file/d/1_VITOKKYnnBUCnnfDoLJB-z2woR3uY_f/view?usp=sharing
 
+---
+<!--
 ## Features
 
 * 🎮 **PS/2 keyboard control**
@@ -35,6 +37,7 @@ The project implements a simple 2D shooting game on an FPGA board. The player co
 
 
 ---
+--->
 
 ## System Overview
 
